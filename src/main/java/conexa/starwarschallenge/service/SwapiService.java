@@ -13,6 +13,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
+
 @Service
 public class SwapiService {
 
@@ -25,11 +27,8 @@ public class SwapiService {
     public Mono<PagedResponseDto<FilmDto>> findFilms(int page, int limit, String name) {
         return webClient.get()
                 .uri(uriBuilder -> {
-                    uriBuilder.path("/films")
-                            .queryParam("page", page)
-                            .queryParam("limit", limit);
                     if (StringUtils.hasText(name)) {
-                        uriBuilder.queryParam("name", name);
+                        uriBuilder.queryParam("search", name);
                     }
                     return uriBuilder.build();
                 })
@@ -45,7 +44,7 @@ public class SwapiService {
                             .queryParam("page", page)
                             .queryParam("limit", limit);
                     if (StringUtils.hasText(name)) {
-                        uriBuilder.queryParam("name", name);
+                        uriBuilder.queryParam("search", name);
                     }
                     return uriBuilder.build();
                 })
@@ -61,7 +60,7 @@ public class SwapiService {
                             .queryParam("page", page)
                             .queryParam("limit", limit);
                     if (StringUtils.hasText(name)) {
-                        uriBuilder.queryParam("name", name);
+                        uriBuilder.queryParam("search", name);
                     }
                     return uriBuilder.build();
                 })
@@ -77,7 +76,7 @@ public class SwapiService {
                             .queryParam("page", page)
                             .queryParam("limit", limit);
                     if (StringUtils.hasText(name)) {
-                        uriBuilder.queryParam("name", name);
+                        uriBuilder.queryParam("search", name);
                     }
                     return uriBuilder.build();
                 })
@@ -87,6 +86,7 @@ public class SwapiService {
     }
 
     private Mono<PagedResponseDto<FilmDto>> enrichFilms(PagedResponseDto<FilmDto> pagedResponse) {
+        if (pagedResponse.getResults().isEmpty()) return Mono.just(pagedResponse);
         return Flux.fromIterable(pagedResponse.getResults())
                 .flatMap(film -> findFilmById(film.getUid()))
                 .map(SingleResponseDto::getResult)
@@ -98,6 +98,7 @@ public class SwapiService {
     }
 
     private Mono<PagedResponseDto<PersonDto>> enrichPeople(PagedResponseDto<PersonDto> pagedResponse) {
+        if (pagedResponse.getResults().isEmpty()) return Mono.just(pagedResponse);
         return Flux.fromIterable(pagedResponse.getResults())
                 .flatMap(person -> findPersonById(person.getUid()))
                 .map(SingleResponseDto::getResult)
@@ -109,6 +110,7 @@ public class SwapiService {
     }
 
     private Mono<PagedResponseDto<StarshipDto>> enrichStarships(PagedResponseDto<StarshipDto> pagedResponse) {
+        if (pagedResponse.getResults().isEmpty()) return Mono.just(pagedResponse);
         return Flux.fromIterable(pagedResponse.getResults())
                 .flatMap(starship -> findStarshipById(starship.getUid()))
                 .map(SingleResponseDto::getResult)
@@ -120,6 +122,7 @@ public class SwapiService {
     }
 
     private Mono<PagedResponseDto<VehicleDto>> enrichVehicles(PagedResponseDto<VehicleDto> pagedResponse) {
+        if (pagedResponse.getResults().isEmpty()) return Mono.just(pagedResponse);
         return Flux.fromIterable(pagedResponse.getResults())
                 .flatMap(vehicle -> findVehicleById(vehicle.getUid()))
                 .map(SingleResponseDto::getResult)

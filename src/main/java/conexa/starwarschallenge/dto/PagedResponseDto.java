@@ -1,15 +1,14 @@
 package conexa.starwarschallenge.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class PagedResponseDto<T> {
 
     private String message;
@@ -19,5 +18,5 @@ public class PagedResponseDto<T> {
     private int totalPages;
     private String previous;
     private String next;
-    private List<T> results;
+    private List<T> results = new ArrayList<>();
 }
