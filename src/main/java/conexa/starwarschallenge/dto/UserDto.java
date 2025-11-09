@@ -1,6 +1,5 @@
 package conexa.starwarschallenge.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SignInRequest {
-    @NotBlank(message = "Username cannot be blank")
+public class UserDto {
+    private Integer id;
     private String username;
-    @NotBlank(message = "Password cannot be blank")
-    private String password;
+    private String role;
 }
