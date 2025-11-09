@@ -11,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,6 +55,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 Map.of("errors", errors),
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(WebClientResponseException.NotFound.class)
+    public ResponseEntity<Map<String, String>> handleSwapiNotFoundException(WebClientResponseException.NotFound ex) {
+        return new ResponseEntity<>(
+                Map.of("error", "The requested resource was not found in the Star Wars API."),
+                HttpStatus.NOT_FOUND
         );
     }
 }
