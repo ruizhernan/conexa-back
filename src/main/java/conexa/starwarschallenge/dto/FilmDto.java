@@ -1,5 +1,6 @@
 package conexa.starwarschallenge.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,9 @@ public class FilmDto {
 
     private FilmPropertiesDto properties;
     private String description;
+    @JsonProperty("get_id")
     private String _id;
     private String uid;
+    @JsonProperty("get__v")
     private String __v;
 }

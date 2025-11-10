@@ -2,6 +2,7 @@ package conexa.starwarschallenge.exception.handler;
 
 import conexa.starwarschallenge.exception.DuplicateUserException;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -35,8 +36,8 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({MalformedJwtException.class, SignatureException.class, ExpiredJwtException.class, UnsupportedJwtException.class})
-    public ResponseEntity<Map<String, String>> handleJwtExceptions(Exception ex) {
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<Map<String, String>> handleJwtExceptions(JwtException ex) {
         return new ResponseEntity<>(
                 Map.of("error", "Invalid or expired token"),
                 HttpStatus.UNAUTHORIZED
@@ -63,6 +64,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 Map.of("error", "The requested resource was not found in the Star Wars API."),
                 HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleAllUncaughtException(Exception ex) {
+        return new ResponseEntity<>(
+                Map.of("error", "Something went wrong: " + ex.getMessage()),
+                HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
 }

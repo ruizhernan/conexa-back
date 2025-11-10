@@ -1,11 +1,6 @@
 package conexa.starwarschallenge.service;
 
-import conexa.starwarschallenge.dto.FilmDto;
-import conexa.starwarschallenge.dto.PagedResponseDto;
-import conexa.starwarschallenge.dto.PersonDto;
-import conexa.starwarschallenge.dto.StarshipDto;
-import conexa.starwarschallenge.dto.VehicleDto;
-import conexa.starwarschallenge.dto.SingleResponseDto;
+import conexa.starwarschallenge.dto.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -13,7 +8,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Service
 public class SwapiService {
@@ -27,13 +24,37 @@ public class SwapiService {
     public Mono<PagedResponseDto<FilmDto>> findFilms(int page, int limit, String name) {
         return webClient.get()
                 .uri(uriBuilder -> {
+                    uriBuilder.path("/films");
+
                     if (StringUtils.hasText(name)) {
                         uriBuilder.queryParam("search", name);
                     }
+
                     return uriBuilder.build();
                 })
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<PagedResponseDto<FilmDto>>() {})
+                .bodyToMono(FilmListResponseDto.class)
+                .map(filmResponse -> {
+                    PagedResponseDto<FilmDto> pagedResponse = new PagedResponseDto<>();
+
+                    List<FilmDto> allFilms = filmResponse.getResults();
+
+                    int totalRecords = allFilms.size();
+                    int startIndex = (page - 1) * limit;
+                    int endIndex = Math.min(startIndex + limit, totalRecords);
+
+                    List<FilmDto> pagedFilms;
+                    if (startIndex < totalRecords) {
+                        pagedFilms = new ArrayList<>(allFilms.subList(startIndex, endIndex));
+                    } else {
+                        pagedFilms = Collections.emptyList();
+                    }
+
+                    pagedResponse.setResults(pagedFilms);
+                    pagedResponse.setTotalRecords(totalRecords);
+
+                    return pagedResponse;
+                })
                 .flatMap(this::enrichFilms);
     }
 
