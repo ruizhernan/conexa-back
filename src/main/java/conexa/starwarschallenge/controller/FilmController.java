@@ -39,10 +39,9 @@ public class FilmController {
     })
     @GetMapping
     public Mono<PagedResponseDto<FilmDto>> getFilms(
-            @Parameter(description = "Page number for pagination") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int limit,
+            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by film's title (case-insensitive)") @RequestParam(required = false) String name) {
-        return swapiService.findFilms(page, limit, name);
+        return swapiService.findFilms(1, limit, name);
     }
 
     @Operation(summary = "Get a single film by ID",

@@ -39,10 +39,9 @@ public class StarshipController {
     })
     @GetMapping
     public Mono<PagedResponseDto<StarshipDto>> getStarships(
-            @Parameter(description = "Page number for pagination") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int limit,
+            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by starship's name (case-insensitive)") @RequestParam(required = false) String name) {
-        return swapiService.findStarships(page, limit, name);
+        return swapiService.findStarships(1, limit, name);
     }
 
     @Operation(summary = "Get a single starship by ID",

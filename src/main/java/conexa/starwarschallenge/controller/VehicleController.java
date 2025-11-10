@@ -38,10 +38,9 @@ public class VehicleController {
     })
     @GetMapping
     public Mono<PagedResponseDto<VehicleDto>> getVehicles(
-            @Parameter(description = "Page number for pagination") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int limit,
+            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by vehicle's name (case-insensitive)") @RequestParam(required = false) String name) {
-        return swapiService.findVehicles(page, limit, name);
+        return swapiService.findVehicles(1, limit, name);
     }
 
     @Operation(summary = "Get a single vehicle by ID",

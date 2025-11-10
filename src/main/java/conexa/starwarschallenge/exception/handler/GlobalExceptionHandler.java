@@ -1,6 +1,7 @@
 package conexa.starwarschallenge.exception.handler;
 
 import conexa.starwarschallenge.exception.DuplicateUserException;
+import conexa.starwarschallenge.exception.TooManyRequestsException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -25,6 +26,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 Map.of("error", ex.getMessage()),
                 HttpStatus.CONFLICT
+        );
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, String>> handleTooManyRequestsException(TooManyRequestsException ex) {
+        return new ResponseEntity<>(
+                Map.of("error", ex.getMessage()),
+                HttpStatus.TOO_MANY_REQUESTS
         );
     }
 
