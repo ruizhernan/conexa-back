@@ -1,51 +1,56 @@
 package conexa.starwarschallenge.security;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-import reactor.core.publisher.Mono;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter implements WebFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final ReactiveUserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String jwt;
+        final String username;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return chain.filter(exchange);
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        String jwt = authHeader.substring(7);
-        String username = jwtService.extractUsername(jwt);
+        jwt = authHeader.substring(7);
+        username = jwtService.extractUsername(jwt);
 
-        if (username != null) {
-            return userDetailsService.findByUsername(username)
-                    .filter(userDetails -> jwtService.isTokenValid(jwt, userDetails))
-                    .flatMap(userDetails -> {
-                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                        return chain.filter(exchange)
-                                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken));
-                    })
-                    .switchIfEmpty(chain.filter(exchange));
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
         }
-
-        return chain.filter(exchange);
+        filterChain.doFilter(request, response);
     }
 }

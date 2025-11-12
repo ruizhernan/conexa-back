@@ -1,86 +1,105 @@
 package conexa.starwarschallenge.exception.handler;
 
+import conexa.starwarschallenge.dto.ErrorDto;
+import conexa.starwarschallenge.dto.ValidationErrorDto;
 import conexa.starwarschallenge.exception.DuplicateUserException;
+import conexa.starwarschallenge.exception.FilmNotFoundException;
 import conexa.starwarschallenge.exception.TooManyRequestsException;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.support.WebExchangeBindException;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // --- 409 Conflict ---
     @ExceptionHandler(DuplicateUserException.class)
-    public ResponseEntity<Map<String, String>> handleDuplicateUserException(DuplicateUserException ex) {
-        return new ResponseEntity<>(
-                Map.of("error", ex.getMessage()),
-                HttpStatus.CONFLICT
+    public ResponseEntity<ErrorDto> handleDuplicateUserException(DuplicateUserException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.CONFLICT.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    // --- 429 Too Many Requests ---
     @ExceptionHandler(TooManyRequestsException.class)
-    public ResponseEntity<Map<String, String>> handleTooManyRequestsException(TooManyRequestsException ex) {
-        return new ResponseEntity<>(
-                Map.of("error", ex.getMessage()),
-                HttpStatus.TOO_MANY_REQUESTS
+    public ResponseEntity<ErrorDto> handleTooManyRequestsException(TooManyRequestsException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentialsException(BadCredentialsException ex) {
-        return new ResponseEntity<>(
-                Map.of("error", "Invalid username or password"),
-                HttpStatus.UNAUTHORIZED
+    // --- 404 Not Found (Domain Specific) ---
+    @ExceptionHandler(FilmNotFoundException.class)
+    public ResponseEntity<ErrorDto> handleFilmNotFoundException(FilmNotFoundException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(JwtException.class)
-    public ResponseEntity<Map<String, String>> handleJwtExceptions(JwtException ex) {
-        return new ResponseEntity<>(
-                Map.of("error", "Invalid or expired token"),
-                HttpStatus.UNAUTHORIZED
+    // --- 401 Unauthorized (Authentication/JWT Errors) ---
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            MalformedJwtException.class,
+            SignatureException.class,
+            ExpiredJwtException.class,
+            UnsupportedJwtException.class
+    })
+    public ResponseEntity<ErrorDto> handleAuthenticationExceptions(Exception ex) {
+        String message = "Invalid or expired token/credentials";
+        ErrorDto error = new ErrorDto(
+                message,
+                HttpStatus.UNAUTHORIZED.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(WebExchangeBindException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationExceptions(WebExchangeBindException ex) {
-        var errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .collect(Collectors.toMap(
-                        fieldError -> fieldError.getField(),
-                        fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "Invalid value"
-                ));
-        return new ResponseEntity<>(
-                Map.of("errors", errors),
-                HttpStatus.BAD_REQUEST
+    // --- 400 Bad Request (Validation Errors) ---
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorDto> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
+
+        ValidationErrorDto error = new ValidationErrorDto(
+                errors,
+                HttpStatus.BAD_REQUEST.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(WebClientResponseException.NotFound.class)
-    public ResponseEntity<Map<String, String>> handleSwapiNotFoundException(WebClientResponseException.NotFound ex) {
-        return new ResponseEntity<>(
-                Map.of("error", "The requested resource was not found in the Star Wars API."),
-                HttpStatus.NOT_FOUND
-        );
-    }
-
+    // --- 500 Internal Server Error (Generic Fallback) ---
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleAllUncaughtException(Exception ex) {
-        return new ResponseEntity<>(
-                Map.of("error", "Something went wrong: " + ex.getMessage()),
-                HttpStatus.INTERNAL_SERVER_ERROR
+    public ResponseEntity<ErrorDto> handleGenericException(Exception ex) {
+        String message = ex.getMessage() != null && !ex.getMessage().isBlank() ? ex.getMessage() : "An unexpected error occurred";
+
+        ErrorDto error = new ErrorDto(
+                message,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                Instant.now()
         );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+
     }
 }

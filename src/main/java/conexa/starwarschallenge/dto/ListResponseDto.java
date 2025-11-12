@@ -5,16 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class FilmDto {
-
-    private FilmPropertiesDto properties;
-    private String description;
-    private String _id;
-    private String uid;
-    private String __v;
+public class ListResponseDto<T> {
+    private String message;
+    private List<T> result;
 }

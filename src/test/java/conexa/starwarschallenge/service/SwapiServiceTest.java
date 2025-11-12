@@ -1,9 +1,11 @@
 package conexa.starwarschallenge.service;
 
+import conexa.starwarschallenge.dto.ListResponseDto;
 import conexa.starwarschallenge.dto.PagedResponseDto;
 import conexa.starwarschallenge.dto.PersonDto;
 import conexa.starwarschallenge.dto.PersonPropertiesDto;
 import conexa.starwarschallenge.dto.SingleResponseDto;
+import conexa.starwarschallenge.exception.TooManyRequestsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,19 +16,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriBuilder;
-import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -35,23 +37,16 @@ import static org.mockito.Mockito.*;
 class SwapiServiceTest {
 
     @Mock
-    private WebClient webClient;
-    @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
-    @Mock
-    private WebClient.RequestHeadersSpec requestHeadersSpec;
-    @Mock
-    private WebClient.ResponseSpec responseSpec;
+    private RestTemplate restTemplate;
 
     @InjectMocks
     private SwapiService swapiService;
 
+    private String swapiBaseUrl = "http://swapi.dev/api";
+
     @BeforeEach
     void setUp() {
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(any(Function.class))).thenReturn(requestHeadersSpec);
-        when(requestHeadersUriSpec.uri(anyString(), anyString())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        ReflectionTestUtils.setField(swapiService, "swapiBaseUrl", swapiBaseUrl);
     }
 
     @Test
@@ -72,33 +67,32 @@ class SwapiServiceTest {
         mockPagedResponse.setTotalPages(1);
         mockPagedResponse.setResults(List.of(personDto));
 
-        SingleResponseDto<PersonDto> mockSingleResponse = new SingleResponseDto<>();
-        mockSingleResponse.setResult(personDto);
+        String expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
+                .path("/people")
+                .queryParam("page", page)
+                .queryParam("limit", limit)
+                .build().toUriString();
 
-        // Mocking para manejar la primera llamada (paged list) y la segunda (enrichment)
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-                .thenReturn(Mono.just(mockPagedResponse))
-                .thenReturn(Mono.just(mockSingleResponse));
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        )).thenReturn(new ResponseEntity<>(mockPagedResponse, HttpStatus.OK));
 
-        // Mockear la llamada específica a findPersonById (necesaria para el enrichment)
-        when(requestHeadersUriSpec.uri(eq("/people/{id}"), eq("1")))
-                .thenReturn(requestHeadersSpec);
-
-
-        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name).block();
+        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalRecords());
         assertEquals(1, result.getResults().size());
         assertEquals("Luke Skywalker", result.getResults().get(0).getProperties().getName());
 
-        // CORRECCIÓN CLAVE: El servicio llama a webClient.get() dos veces:
-        // 1) Para la paginación. 2) Dentro de findPersonById para el enrichment.
-        verify(webClient, times(2)).get();
-
-        verify(requestHeadersUriSpec, times(1)).uri(any(Function.class));
-        verify(requestHeadersSpec, times(2)).retrieve();
-        verify(responseSpec, times(2)).bodyToMono(any(ParameterizedTypeReference.class));
+        verify(restTemplate, times(1)).exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        );
     }
 
     @Test
@@ -114,43 +108,35 @@ class SwapiServiceTest {
         personDto.setUid("1");
         personDto.setProperties(personPropertiesDto);
 
-        PagedResponseDto<PersonDto> mockPagedResponse = new PagedResponseDto<>();
-        mockPagedResponse.setTotalRecords(1);
-        mockPagedResponse.setTotalPages(1);
-        mockPagedResponse.setResults(List.of(personDto));
+        ListResponseDto<PersonDto> mockListResponse = new ListResponseDto<>();
+        mockListResponse.setMessage("ok");
+        mockListResponse.setResult(List.of(personDto));
 
-        SingleResponseDto<PersonDto> mockSingleResponse = new SingleResponseDto<>();
-        mockSingleResponse.setResult(personDto);
+        String expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
+                .path("/people")
+                .queryParam("search", name)
+                .build().toUriString();
 
-        // Mocking para la lista paginada y el enrichment
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-                .thenReturn(Mono.just(mockPagedResponse))
-                .thenReturn(Mono.just(mockSingleResponse));
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        )).thenReturn(new ResponseEntity<>(mockListResponse, HttpStatus.OK));
 
-        when(requestHeadersUriSpec.uri(eq("/people/{id}"), eq("1")))
-                .thenReturn(requestHeadersSpec);
-
-        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name).block();
+        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalRecords());
         assertEquals(1, result.getResults().size());
         assertEquals("Luke Skywalker", result.getResults().get(0).getProperties().getName());
 
-        // CORRECCIÓN CLAVE: El servicio llama a webClient.get() dos veces.
-        verify(webClient, times(2)).get();
-
-        // Verificar que el método uri fue llamado con el filtro 'search'
-        verify(requestHeadersUriSpec, times(1)).uri(argThat((Function<UriBuilder, URI> uriFunction) -> {
-            URI uri = uriFunction.apply(UriComponentsBuilder.fromPath("/"));
-            return "/people".equals(uri.getPath()) &&
-                    uri.getQuery().contains("page=1") &&
-                    uri.getQuery().contains("limit=10") &&
-                    uri.getQuery().contains("search=Luke");
-        }));
-
-        verify(requestHeadersSpec, times(2)).retrieve();
-        verify(responseSpec, times(2)).bodyToMono(any(ParameterizedTypeReference.class));
+        verify(restTemplate, times(1)).exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        );
     }
 
     @Test
@@ -166,24 +152,29 @@ class SwapiServiceTest {
         SingleResponseDto<PersonDto> mockResponse = new SingleResponseDto<>();
         mockResponse.setResult(personDto);
 
-        when(requestHeadersUriSpec.uri(eq("/people/{id}"), eq(id)))
-                .thenReturn(requestHeadersSpec);
+        String expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
+                .path("/people/{id}")
+                .buildAndExpand(id).toUriString();
 
-        // Simulación corregida de bodyToMono
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-                .thenReturn(Mono.just(mockResponse));
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        )).thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
 
-        SingleResponseDto<PersonDto> result = swapiService.findPersonById(id).block();
+        SingleResponseDto<PersonDto> result = swapiService.findPersonById(id);
 
         assertNotNull(result);
         assertNotNull(result.getResult());
         assertEquals("Luke Skywalker", result.getResult().getProperties().getName());
 
-        // Aquí solo se espera 1 llamada a get()
-        verify(webClient, times(1)).get();
-        verify(requestHeadersUriSpec, times(1)).uri(eq("/people/{id}"), eq(id));
-        verify(requestHeadersSpec, times(1)).retrieve();
-        verify(responseSpec, times(1)).bodyToMono(any(ParameterizedTypeReference.class));
+        verify(restTemplate, times(1)).exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        );
     }
 
     @Test
@@ -198,21 +189,30 @@ class SwapiServiceTest {
         mockResponse.setTotalPages(0);
         mockResponse.setResults(Collections.emptyList());
 
-        // Simulación corregida de bodyToMono
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-                .thenReturn(Mono.just(mockResponse));
+        String expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
+                .path("/people")
+                .queryParam("page", page)
+                .queryParam("limit", limit)
+                .build().toUriString();
 
-        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name).block();
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        )).thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
+
+        PagedResponseDto<PersonDto> result = swapiService.findPeople(page, limit, name);
 
         assertNotNull(result);
         assertEquals(0, result.getTotalRecords());
         assertTrue(result.getResults().isEmpty());
 
-        // Aquí solo se espera 1 llamada a get(), ya que la lista está vacía y no se enriquece.
-        verify(webClient, times(1)).get();
-        verify(requestHeadersUriSpec, times(1)).uri(any(Function.class));
-        verify(requestHeadersSpec, times(1)).retrieve();
-        verify(responseSpec, times(1)).bodyToMono(any(ParameterizedTypeReference.class));
-        verify(requestHeadersUriSpec, never()).uri(eq("/people/{id}"), anyString());
+        verify(restTemplate, times(1)).exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                eq(null),
+                any(ParameterizedTypeReference.class)
+        );
     }
 }

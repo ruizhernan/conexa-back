@@ -12,16 +12,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
-
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @ExtendWith(MockitoExtension.class)
 class FilmControllerTest {
@@ -32,15 +33,17 @@ class FilmControllerTest {
     @InjectMocks
     private FilmController filmController;
 
-    private WebTestClient webTestClient;
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        webTestClient = WebTestClient.bindToController(filmController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(filmController).build();
     }
 
+
+
     @Test
-    void getFilms_shouldReturnPagedFilms() {
+    void getFilms_shouldReturnPagedFilms() throws Exception {
         FilmPropertiesDto filmPropertiesDto = new FilmPropertiesDto();
         filmPropertiesDto.setTitle("A New Hope");
         FilmDto filmDto = new FilmDto();
@@ -50,22 +53,16 @@ class FilmControllerTest {
         pagedResponse.setTotalRecords(1);
 
         when(swapiService.findFilms(anyInt(), anyInt(), anyString()))
-                .thenReturn(Mono.just(pagedResponse));
+                .thenReturn(pagedResponse);
 
-        webTestClient.get().uri("/api/v1/films?page=1&limit=10&name=New")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(new ParameterizedTypeReference<PagedResponseDto<FilmDto>>() {})
-                .consumeWith(response -> {
-                    PagedResponseDto<FilmDto> responseBody = response.getResponseBody();
-                    assert responseBody != null;
-                    assert responseBody.getResults().get(0).getProperties().getTitle().equals("A New Hope");
-                });
+        mockMvc.perform(get("/api/v1/films?page=1&limit=10&name=New")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].properties.title").value("A New Hope"));
     }
 
     @Test
-    void getFilmById_shouldReturnSingleFilm() {
+    void getFilmById_shouldReturnSingleFilm() throws Exception {
         FilmPropertiesDto filmPropertiesDto = new FilmPropertiesDto();
         filmPropertiesDto.setTitle("A New Hope");
         FilmDto filmDto = new FilmDto();
@@ -74,17 +71,11 @@ class FilmControllerTest {
         singleResponse.setResult(filmDto);
 
         when(swapiService.findFilmById(anyString()))
-                .thenReturn(Mono.just(singleResponse));
+                .thenReturn(singleResponse);
 
-        webTestClient.get().uri("/api/v1/films/1")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(new ParameterizedTypeReference<SingleResponseDto<FilmDto>>() {})
-                .consumeWith(response -> {
-                    SingleResponseDto<FilmDto> responseBody = response.getResponseBody();
-                    assert responseBody != null;
-                    assert responseBody.getResult().getProperties().getTitle().equals("A New Hope");
-                });
+        mockMvc.perform(get("/api/v1/films/1")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.properties.title").value("A New Hope"));
     }
 }

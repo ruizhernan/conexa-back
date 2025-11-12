@@ -16,11 +16,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -37,9 +38,9 @@ class AuthenticationServiceImplTest {
     @Mock
     private JwtService jwtService;
     @Mock
-    private ReactiveAuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
     @Mock
-    private ReactiveUserDetailsService userDetailsService;
+    private UserDetailsService userDetailsService;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
@@ -73,8 +74,7 @@ class AuthenticationServiceImplTest {
             return savedUser;
         });
 
-        Mono<UserDto> responseMono = authenticationService.signup(signUpRequest);
-        UserDto response = responseMono.block(); // Blocking for testing reactive flow
+        UserDto response = authenticationService.signup(signUpRequest);
 
         assertNotNull(response);
         assertEquals(user.getUsername(), response.getUsername());
@@ -90,7 +90,7 @@ class AuthenticationServiceImplTest {
     void signup_DuplicateUser() {
         when(userRepository.findByUsername(signUpRequest.getUsername())).thenReturn(Optional.of(user));
 
-        assertThrows(DuplicateUserException.class, () -> authenticationService.signup(signUpRequest).block());
+        assertThrows(DuplicateUserException.class, () -> authenticationService.signup(signUpRequest));
 
         verify(userRepository, times(1)).findByUsername(signUpRequest.getUsername());
         verify(passwordEncoder, never()).encode(anyString());
@@ -102,18 +102,17 @@ class AuthenticationServiceImplTest {
     @DisplayName("Should successfully sign in an existing user")
     void signin_Success() {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(Mono.just(mock(org.springframework.security.core.Authentication.class))); // Mock successful authentication
-        when(userDetailsService.findByUsername(signInRequest.getUsername())).thenReturn(Mono.just(user));
+                .thenReturn(mock(Authentication.class)); // Mock successful authentication
+        when(userDetailsService.loadUserByUsername(signInRequest.getUsername())).thenReturn(user);
         when(jwtService.generateToken(any(User.class))).thenReturn(jwtToken);
 
-        Mono<JwtAuthenticationResponse> responseMono = authenticationService.signin(signInRequest);
-        JwtAuthenticationResponse response = responseMono.block(); // Blocking for testing reactive flow
+        JwtAuthenticationResponse response = authenticationService.signin(signInRequest);
 
         assertNotNull(response);
         assertEquals(jwtToken, response.getToken());
         assertEquals(user.getRole().name(), response.getRole());
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userDetailsService, times(1)).findByUsername(signInRequest.getUsername());
+        verify(userDetailsService, times(1)).loadUserByUsername(signInRequest.getUsername());
         verify(jwtService, times(1)).generateToken(any(User.class));
     }
 
@@ -121,12 +120,12 @@ class AuthenticationServiceImplTest {
     @DisplayName("Should throw exception when signing in with invalid credentials")
     void signin_InvalidCredentials() {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(Mono.error(new RuntimeException("Bad credentials"))); // Simulate bad credentials
+                .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        assertThrows(RuntimeException.class, () -> authenticationService.signin(signInRequest).block());
+        assertThrows(BadCredentialsException.class, () -> authenticationService.signin(signInRequest));
 
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userDetailsService, never()).findByUsername(anyString());
+        verify(userDetailsService, never()).loadUserByUsername(anyString());
         verify(jwtService, never()).generateToken(any(User.class));
     }
 }

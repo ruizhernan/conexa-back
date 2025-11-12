@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
+
 
 @RestController
 @RequestMapping("/api/v1/films")
@@ -38,10 +38,11 @@ public class FilmController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public Mono<PagedResponseDto<FilmDto>> getFilms(
-            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
+    public PagedResponseDto<FilmDto> getFilms(
+            @Parameter(description = "Page number for pagination") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int limit,
             @Parameter(description = "Filter by film's title (case-insensitive)") @RequestParam(required = false) String name) {
-        return swapiService.findFilms(1, limit, name);
+        return swapiService.findFilms(page, limit, name);
     }
 
     @Operation(summary = "Get a single film by ID",
@@ -52,7 +53,7 @@ public class FilmController {
             @ApiResponse(responseCode = "404", description = "Film not found with the given ID", content = @Content)
     })
     @GetMapping("/{id}")
-    public Mono<SingleResponseDto<FilmDto>> getFilmById(
+    public SingleResponseDto<FilmDto> getFilmById(
             @Parameter(description = "ID of the film to retrieve") @PathVariable String id) {
         return swapiService.findFilmById(id);
     }

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
+
 
 @RestController
 @RequestMapping("/api/v1/starships")
@@ -38,7 +38,7 @@ public class StarshipController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public Mono<PagedResponseDto<StarshipDto>> getStarships(
+    public PagedResponseDto<StarshipDto> getStarships(
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by starship's name (case-insensitive)") @RequestParam(required = false) String name) {
         return swapiService.findStarships(1, limit, name);
@@ -52,7 +52,7 @@ public class StarshipController {
             @ApiResponse(responseCode = "404", description = "Starship not found with the given ID", content = @Content)
     })
     @GetMapping("/{id}")
-    public Mono<SingleResponseDto<StarshipDto>> getStarshipById(
+    public SingleResponseDto<StarshipDto> getStarshipById(
             @Parameter(description = "ID of the starship to retrieve") @PathVariable String id) {
         return swapiService.findStarshipById(id);
     }

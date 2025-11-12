@@ -36,12 +36,11 @@ class JwtServiceTest {
     @Mock
     private UserDetails userDetails;
 
-    private final String TEST_SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"; // A 256-bit key
+    private final String TEST_SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
     private final String TEST_USERNAME = "testuser";
 
     @BeforeEach
     void setUp() {
-        // Inject the secretKey into the JwtService using ReflectionTestUtils
         ReflectionTestUtils.setField(jwtService, "secretKey", TEST_SECRET_KEY);
         when(userDetails.getUsername()).thenReturn(TEST_USERNAME);
     }
@@ -87,19 +86,10 @@ class JwtServiceTest {
     @Test
     @DisplayName("Should return false for an expired token")
     void isTokenValid_ShouldReturnFalseForExpiredToken() throws InterruptedException {
-        // Generate a token with a very short expiration for testing purposes
-        // Temporarily modify the generateToken logic for this test or mock System.currentTimeMillis()
-        // For simplicity, let's generate a token with a custom short expiration directly here
-        // This requires exposing a test-friendly generateToken or mocking internal Date calls.
-        // Given the current JwtService implementation, directly testing expiration is tricky without modifying the service.
-        // A common approach is to mock the Date object or System.currentTimeMillis().
-        // For now, we'll simulate an expired token by creating one with a past expiration date.
-
-        // Create a token that expired in the past
         String expiredToken = Jwts.builder()
                 .setSubject(TEST_USERNAME)
-                .setIssuedAt(new Date(System.currentTimeMillis() - 1000 * 60 * 60)) // Issued an hour ago
-                .setExpiration(new Date(System.currentTimeMillis() - 1000 * 60 * 30)) // Expired 30 minutes ago
+                .setIssuedAt(new Date(System.currentTimeMillis() - 1000 * 60 * 60))
+                .setExpiration(new Date(System.currentTimeMillis() - 1000 * 60 * 30))
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET_KEY)))
                 .compact();
 

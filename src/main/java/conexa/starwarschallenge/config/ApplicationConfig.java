@@ -4,13 +4,14 @@ import conexa.starwarschallenge.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @RequiredArgsConstructor
@@ -19,18 +20,27 @@ public class ApplicationConfig {
     private final UserRepository userRepository;
 
     @Bean
-    public ReactiveUserDetailsService userDetailsService() {
-        return username -> Mono.justOrEmpty(userRepository.findByUsername(username))
-                .switchIfEmpty(Mono.error(new UsernameNotFoundException("User not found")))
-                .cast(org.springframework.security.core.userdetails.UserDetails.class);
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
     @Bean
-    public ReactiveAuthenticationManager reactiveAuthenticationManager(ReactiveUserDetailsService userDetailsService,
-                                                                     PasswordEncoder passwordEncoder) {
-        var authenticationManager = new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
-        authenticationManager.setPasswordEncoder(passwordEncoder);
-        return authenticationManager;
+    public UserDetailsService userDetailsService() {
+        return username -> userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService());
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
+
 
 @RestController
 @RequestMapping("/api/v1/people")
@@ -38,7 +38,7 @@ public class PeopleController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public Mono<PagedResponseDto<PersonDto>> getPeople(
+    public PagedResponseDto<PersonDto> getPeople(
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by person's name (case-insensitive)") @RequestParam(required = false) String name) {
         return swapiService.findPeople(1, limit, name);
@@ -52,7 +52,7 @@ public class PeopleController {
             @ApiResponse(responseCode = "404", description = "Person not found with the given ID", content = @Content)
     })
     @GetMapping("/{id}")
-    public Mono<SingleResponseDto<PersonDto>> getPersonById(
+    public SingleResponseDto<PersonDto> getPersonById(
             @Parameter(description = "ID of the person to retrieve") @PathVariable String id) {
         return swapiService.findPersonById(id);
     }

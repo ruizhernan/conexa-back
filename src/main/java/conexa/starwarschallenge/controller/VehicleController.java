@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
+
 
 @RestController
 @RequestMapping("/api/v1/vehicles")
@@ -37,7 +37,7 @@ public class VehicleController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public Mono<PagedResponseDto<VehicleDto>> getVehicles(
+    public PagedResponseDto<VehicleDto> getVehicles(
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by vehicle's name (case-insensitive)") @RequestParam(required = false) String name) {
         return swapiService.findVehicles(1, limit, name);
@@ -51,7 +51,7 @@ public class VehicleController {
             @ApiResponse(responseCode = "404", description = "Vehicle not found with the given ID", content = @Content)
     })
     @GetMapping("/{id}")
-    public Mono<SingleResponseDto<VehicleDto>> getVehicleById(
+    public SingleResponseDto<VehicleDto> getVehicleById(
             @Parameter(description = "ID of the vehicle to retrieve") @PathVariable String id) {
         return swapiService.findVehicleById(id);
     }
