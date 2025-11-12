@@ -4,13 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SingleResponseDto<T> {
-    private String message;
-    private T result;
+public class SearchResponseDto<T> {
 
-    public SingleResponseDto(Object o, String s, boolean b) {
-    }
+    private String message;
+
+    private List<T> result;
 }

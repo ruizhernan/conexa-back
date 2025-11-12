@@ -13,5 +13,9 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ListResponseDto<T> {
     private String message;
-    private List<T> result;
+    private int total_records;
+    private int total_pages;
+    private String previous;
+    private String next;
+    private List<T> results;
 }

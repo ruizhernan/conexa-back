@@ -1,6 +1,7 @@
 package conexa.starwarschallenge.controller;
 
 import conexa.starwarschallenge.dto.FilmDto;
+import conexa.starwarschallenge.dto.FilmRawItemDto;
 import conexa.starwarschallenge.dto.PagedResponseDto;
 import conexa.starwarschallenge.service.SwapiService;
 import conexa.starwarschallenge.dto.SingleResponseDto;
@@ -38,7 +39,7 @@ public class FilmController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public PagedResponseDto<FilmDto> getFilms(
+    public PagedResponseDto<FilmRawItemDto> getFilms(
             @Parameter(description = "Page number for pagination") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int limit,
             @Parameter(description = "Filter by film's title (case-insensitive)") @RequestParam(required = false) String name) {

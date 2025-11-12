@@ -3,7 +3,8 @@ package conexa.starwarschallenge.controller;
 import conexa.starwarschallenge.dto.FilmDto;
 import conexa.starwarschallenge.dto.PagedResponseDto;
 import conexa.starwarschallenge.dto.SingleResponseDto;
-import conexa.starwarschallenge.dto.FilmPropertiesDto;
+import conexa.starwarschallenge.dto.FilmPropertiesDto; // Re-add import
+import conexa.starwarschallenge.dto.FilmRawItemDto;
 import conexa.starwarschallenge.service.SwapiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,12 +45,13 @@ class FilmControllerTest {
 
     @Test
     void getFilms_shouldReturnPagedFilms() throws Exception {
-        FilmPropertiesDto filmPropertiesDto = new FilmPropertiesDto();
-        filmPropertiesDto.setTitle("A New Hope");
-        FilmDto filmDto = new FilmDto();
-        filmDto.setProperties(filmPropertiesDto);
-        PagedResponseDto<FilmDto> pagedResponse = new PagedResponseDto<>();
-        pagedResponse.setResults(Collections.singletonList(filmDto));
+        FilmRawItemDto filmRawItemDto = new FilmRawItemDto();
+        filmRawItemDto.setName("A New Hope");
+        filmRawItemDto.setUid("1");
+        filmRawItemDto.setUrl("http://swapi.dev/api/films/1/");
+
+        PagedResponseDto<FilmRawItemDto> pagedResponse = new PagedResponseDto<>();
+        pagedResponse.setResults(Collections.singletonList(filmRawItemDto));
         pagedResponse.setTotalRecords(1);
 
         when(swapiService.findFilms(anyInt(), anyInt(), anyString()))
@@ -58,7 +60,7 @@ class FilmControllerTest {
         mockMvc.perform(get("/api/v1/films?page=1&limit=10&name=New")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.results[0].properties.title").value("A New Hope"));
+                .andExpect(jsonPath("$.results[0].name").value("A New Hope"));
     }
 
     @Test

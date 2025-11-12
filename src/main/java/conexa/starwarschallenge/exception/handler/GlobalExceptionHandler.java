@@ -4,6 +4,9 @@ import conexa.starwarschallenge.dto.ErrorDto;
 import conexa.starwarschallenge.dto.ValidationErrorDto;
 import conexa.starwarschallenge.exception.DuplicateUserException;
 import conexa.starwarschallenge.exception.FilmNotFoundException;
+import conexa.starwarschallenge.exception.PersonNotFoundException;
+import conexa.starwarschallenge.exception.StarshipNotFoundException;
+import conexa.starwarschallenge.exception.VehicleNotFoundException;
 import conexa.starwarschallenge.exception.TooManyRequestsException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -48,6 +51,36 @@ public class GlobalExceptionHandler {
     // --- 404 Not Found (Domain Specific) ---
     @ExceptionHandler(FilmNotFoundException.class)
     public ResponseEntity<ErrorDto> handleFilmNotFoundException(FilmNotFoundException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                Instant.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(PersonNotFoundException.class)
+    public ResponseEntity<ErrorDto> handlePersonNotFoundException(PersonNotFoundException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                Instant.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(StarshipNotFoundException.class)
+    public ResponseEntity<ErrorDto> handleStarshipNotFoundException(StarshipNotFoundException ex) {
+        ErrorDto error = new ErrorDto(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                Instant.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(VehicleNotFoundException.class)
+    public ResponseEntity<ErrorDto> handleVehicleNotFoundException(VehicleNotFoundException ex) {
         ErrorDto error = new ErrorDto(
                 ex.getMessage(),
                 HttpStatus.NOT_FOUND.value(),

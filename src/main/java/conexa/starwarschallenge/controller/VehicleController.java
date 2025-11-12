@@ -2,6 +2,7 @@ package conexa.starwarschallenge.controller;
 
 import conexa.starwarschallenge.dto.PagedResponseDto;
 import conexa.starwarschallenge.dto.VehicleDto;
+import conexa.starwarschallenge.dto.VehicleRawItemDto;
 import conexa.starwarschallenge.service.SwapiService;
 import conexa.starwarschallenge.dto.SingleResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +38,7 @@ public class VehicleController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public PagedResponseDto<VehicleDto> getVehicles(
+    public PagedResponseDto<VehicleRawItemDto> getVehicles(
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by vehicle's name (case-insensitive)") @RequestParam(required = false) String name) {
         return swapiService.findVehicles(1, limit, name);

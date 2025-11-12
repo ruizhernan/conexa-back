@@ -2,6 +2,7 @@ package conexa.starwarschallenge.controller;
 
 import conexa.starwarschallenge.dto.PagedResponseDto;
 import conexa.starwarschallenge.dto.PersonDto;
+import conexa.starwarschallenge.dto.PersonRawItemDto;
 import conexa.starwarschallenge.service.SwapiService;
 import conexa.starwarschallenge.dto.SingleResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +39,7 @@ public class PeopleController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - JWT is missing or invalid", content = @Content)
     })
     @GetMapping
-    public PagedResponseDto<PersonDto> getPeople(
+    public PagedResponseDto<PersonRawItemDto> getPeople(
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "1") int limit,
             @Parameter(description = "Filter by person's name (case-insensitive)") @RequestParam(required = false) String name) {
         return swapiService.findPeople(1, limit, name);
