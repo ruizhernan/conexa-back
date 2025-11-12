@@ -26,6 +26,9 @@ Este proyecto se encuentra dockerizado, para ser desplegado en cualquier servici
 Para correrlo localmente:
 
 1 - Clonar el repo
+
 2 - En la carpeta root del proyecto correr docker-compose up -d --build (se requiere docker desktop instalado)
+
 3 - La app va a quedar corriendo en el puerto 8080
+
 4 - Documentación Swagger disponible en http://localhost:8080/webjars/swagger-ui/index.html# 
