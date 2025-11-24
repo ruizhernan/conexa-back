@@ -22,6 +22,21 @@ Integración: Verifica el flujo completo de la API (incluyendo la capa de seguri
 
 Unitaria / Componente: Valida la lógica de negocio y el manejo de excepciones. Incluye pruebas específicas para el GlobalExceptionHandler utilizando MockMvcBuilders.standaloneSetup.
 
+Estructura del Proyecto
+
+El proyecto sigue una arquitectura de capas estándar para aplicaciones Spring Boot, organizada de la siguiente manera:
+
+*   `conexa.starwarschallenge`: Paquete raíz de la aplicación.
+    *   `config`: Clases de configuración global para la aplicación (CORS, OpenAPI, etc.).
+    *   `controller`: Contiene los controladores REST que exponen los endpoints de la API.
+    *   `dto`: Objetos de transferencia de datos (DTOs) utilizados para la comunicación entre capas y con el cliente.
+    *   `entity`: Entidades de la base de datos.
+    *   `exception`: Clases de excepción personalizadas y el manejador global de excepciones.
+    *   `repository`: Interfaces de repositorio para la persistencia de datos.
+    *   `security`: Clases relacionadas con la seguridad, incluyendo filtros JWT y configuración de seguridad.
+    *   `service`: Lógica de negocio de la aplicación.
+        *   `impl`: Implementaciones de las interfaces de servicio.
+
 Este proyecto se encuentra dockerizado, para ser desplegado en cualquier servicio de nube. (se encuentra en un servidor VPS en este momento)
 Para correrlo localmente:
 

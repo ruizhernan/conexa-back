@@ -3,6 +3,7 @@ package conexa.starwarschallenge.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -13,5 +14,6 @@ public class SearchResponseDto<T> {
 
     private String message;
 
-    private List<T> result;
+    @JsonProperty("results")
+    private List<T> results;
 }

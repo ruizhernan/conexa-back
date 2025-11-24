@@ -60,7 +60,7 @@ class FilmControllerTest {
         mockMvc.perform(get("/api/v1/films?page=1&limit=10&name=New")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.results[0].name").value("A New Hope"));
+                .andExpect(jsonPath("$.results[0].title").value("A New Hope"));
     }
 
     @Test

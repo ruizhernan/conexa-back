@@ -120,7 +120,7 @@ class SwapiServiceTest {
 
         SearchResponseDto<PersonRawItemDto> mockSearchResponse = new SearchResponseDto<>();
         mockSearchResponse.setMessage("ok");
-        mockSearchResponse.setResult(List.of(personRawItemDto)); // Use setResult
+        mockSearchResponse.setResults(List.of(personRawItemDto));
 
         URI expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
                 .path("/people")
@@ -308,7 +308,7 @@ class SwapiServiceTest {
 
         SearchResponseDto<FilmRawItemDto> mockSearchResponse = new SearchResponseDto<>();
         mockSearchResponse.setMessage("ok");
-        mockSearchResponse.setResult(List.of(filmRawItemDto));
+        mockSearchResponse.setResults(List.of(filmRawItemDto));
 
         URI expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
                 .path("/films")
@@ -376,7 +376,7 @@ class SwapiServiceTest {
 
         SearchResponseDto<StarshipRawItemDto> mockSearchResponse = new SearchResponseDto<>();
         mockSearchResponse.setMessage("ok");
-        mockSearchResponse.setResult(List.of(starshipRawItemDto));
+        mockSearchResponse.setResults(List.of(starshipRawItemDto));
 
         URI expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
                 .path("/starships")
@@ -444,9 +444,8 @@ class SwapiServiceTest {
 
         SearchResponseDto<VehicleRawItemDto> mockSearchResponse = new SearchResponseDto<>();
         mockSearchResponse.setMessage("ok");
-        mockSearchResponse.setResult(List.of(vehicleRawItemDto));
+        mockSearchResponse.setResults(List.of(vehicleRawItemDto));
 
-        // Construir el objeto URI
         URI expectedUri = UriComponentsBuilder.fromUriString(swapiBaseUrl)
                 .path("/vehicles")
                 .queryParam("search", name)
@@ -482,7 +481,6 @@ class SwapiServiceTest {
                 .path("/vehicles/{id}")
                 .buildAndExpand(id).toUriString();
 
-        // Esta prueba usa String URI y es correcta.
         when(restTemplate.exchange(
                 eq(expectedUri),
                 eq(HttpMethod.GET),
